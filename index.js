@@ -36,15 +36,22 @@ async function getImages() {
 
     const mediaQuery = window.matchMedia("(min-width: 60rem)");
     if (mediaQuery.matches) {
-        count = 20;
+        count = 25;
     } else {
-        count = 10;
+        count = 15;
     }
     try {
         apiURL = `https://api.unsplash.com/photos/random?client_id=${API_KEY}&count=${count}&crop=faces,center`;
         const data = await fetch(apiURL);
+        if (!data.ok) {
+            if (data.status == 403) {
+                throw new Error(
+                    `Fetch limit exceeded, please try again later!!\n
+                    (current maximum API request count is 50 / hour)`
+                );
+            }
+        }
         const response = await data.json();
-        console.log(response);
         response.forEach((photo) => {
             const description = photo.description;
             const hotlink = photo.links.html;
@@ -70,10 +77,12 @@ async function getImages() {
         });
     } catch (error) {
         showBackdrop();
+        console.log(error);
         errorDiv.style.top = "1rem";
         errorDiv.style.opacity = "1";
         const errorMessage = document.createElement("h3");
-        errorMessage.innerHTML = error;
+        errorMessage.innerHTML = error.message;
+        errorMessage.style.textAlign = "center";
         errorDiv.appendChild(errorMessage);
     }
     hideLoading();
